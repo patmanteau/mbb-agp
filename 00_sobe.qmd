@@ -1,0 +1,107 @@
+---
+bibliography: 2023_agp_sobe.bib
+highlight-style: gruvbox
+reference-location: margin
+---
+
+# It's a desert
+
+![](img/joshua-woroniecki--desert.jpg)
+
+::: {.column-margin}
+Foto von [Joshua Woroniecki](https://unsplash.com/@joshua_j_woroniecki?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText) auf [Unsplash](https://unsplash.com/de/fotos/-L9Ek3MS_rc?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText)
+:::
+
+Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet [@GlobalFootprintNetwork_NationalFootprint_2022].
+
+```{python}
+# | tags: []
+import numpy as np
+import pandas as pd
+import seaborn as sns
+import re
+
+```
+
+```{python}
+# | tags: []
+import locale
+
+locale.setlocale(locale.LC_ALL, "de_DE")
+
+
+```
+
+```{python}
+# | tags: []
+def convert_per_capita_gdp(token) -> np.float64:
+    if isinstance(token, np.float64):
+        return token
+    elif isinstance(token, str):
+        m = re.match(r"((?:\d+[.,])*\d+[.,]?\d+)", token)
+        if m:
+            print(locale.delocalize(m.group(1)))
+            return np.float64(locale.delocalize(m.group(1)))
+        else:
+            return np.nan
+
+
+```
+
+```{python}
+# | tags: []
+def convert_ecological_reserve(token) -> np.float64:
+    if not isinstance(token, str):
+        return np.nan
+    m = re.match(r"(?P<parens>\()?(?P<number>\d+(?:,?\d+))(?:\))?", token)
+    if not m:
+        return np.nan
+    else:
+        val = locale.delocalize(m.group("number"))
+        sgn = -1 if m.group("parens") else 1
+        return np.float64(val) * sgn
+
+
+```
+
+## Daten einlesen
+
+```{python}
+data = pd.read_csv(
+    "NFA_2022_Country_Results.csv",
+    header=21,
+    sep=";",
+    nrows=184,
+    thousands=".",
+    decimal=",",
+    converters={
+        "Ecological (Deficit) or Reserve": convert_ecological_reserve,
+        "Per Capita GDP": convert_per_capita_gdp,
+    },
+    dtype={
+        "Country": "string",
+        "Region": "string",
+        "Data Quality": "category",
+        "Income Group": "category",
+    },
+    usecols=range(33),
+)
+print(data.dtypes)
+data
+```
+
+```{python}
+# | tags: []
+# sns.pairplot(data)
+```
+
+```{python}
+runs = pd.read_json("dat/all.json", convert_dates=["time", "created", "edited"])
+runs
+runs.dtypes
+```
+
+## References
+
+::: {#refs}
+:::
